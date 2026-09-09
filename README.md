@@ -188,14 +188,6 @@ Se preferir não ativar o venv, chame o Python dele diretamente:
 .venv\Scripts\python.exe app.py
 ```
 
-### Aviso do torchvision
-
-Na inicialização aparece uma mensagem informando que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. **É apenas um aviso** — a aplicação funciona normalmente. Para silenciá-lo:
-
-```bash
-pip install torchvision
-```
-
 ---
 
 # 🧰 Problemas comuns
