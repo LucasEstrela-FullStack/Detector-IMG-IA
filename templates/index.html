@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Imagem: IA ou Real</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #141E30, #243B55);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin-top: 30px;
+            font-size: 28px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin: 30px auto;
+            background: #1e3c72;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .preview-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        button {
+            background: #ff9800;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+            width: 100%;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #e68900;
+        }
+
+        .spinner {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .spinner img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .result.success {
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+        }
+
+        .result.error {
+            background: rgba(244, 67, 54, 0.8);
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            input[type="file"] {
+                font-size: 14px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Detector de Imagem: IA ou Real</h1>
+
+    <div class="container">
+        <h2>Envie uma imagem</h2>
+
+        <div class="input-container">
+            <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+        </div>
+
+        <div class="preview-container">
+            <img id="imagePreview" alt="Pré-visualização da imagem">
+        </div>
+
+        <button onclick="submitImage()">Detectar se é IA ou Real</button>
+
+        <div class="spinner" id="imageSpinner">
+            <img src="static/spinner1.gif" alt="Carregando...">
+        </div>
+
+        <div class="result" id="detectionResult">
+            <!-- O resultado aparece aqui -->
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const file = imageInput.files[0];
+
+            if (file) {
+                const url = URL.createObjectURL(file);
+                imagePreview.src = url;
+                imagePreview.style.display = 'block';
+            }
+        }
+
+        function submitImage() {
+            const imageInput = document.getElementById('imageInput');
+            const imageSpinner = document.getElementById('imageSpinner');
+            const detectionResult = document.getElementById('detectionResult');
+
+            const file = imageInput.files[0];
+            if (!file) {
+                alert('Selecione um arquivo de imagem.');
+                return;
+            }
+
+            imageSpinner.style.display = 'block';
+            detectionResult.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            fetch('/predict', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                imageSpinner.style.display = 'none';
+
+                if (data.prediction) {
+                    detectionResult.innerHTML = `🖼️ Previsão: <strong>${data.prediction}</strong><br> 🎯 Confiança: <strong>${(data.confidence * 100).toFixed(2)}%</strong>`;
+                    detectionResult.className = "result success";
+                } else {
+                    detectionResult.textContent = "❌ Erro: " + data.error;
+                    detectionResult.className = "result error";
+                }
+
+                detectionResult.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                detectionResult.textContent = 'Ocorreu um erro ao processar a imagem.';
+                detectionResult.className = "result error";
+                imageSpinner.style.display = 'none';
+                detectionResult.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
