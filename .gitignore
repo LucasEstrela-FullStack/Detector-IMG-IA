@@ -1,0 +1,25 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Dataset (120 mil imagens do CIFAKE — baixar da fonte original)
+dataset/
+
+# Artefatos de treino (não necessários para inferência)
+logs/
+model/**/checkpoint-*/
+*.pt
+*.pth
+optimizer.bin
+
+# Sistema
+.DS_Store
+Thumbs.db
