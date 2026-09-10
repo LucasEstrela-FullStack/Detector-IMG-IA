@@ -1,0 +1,26 @@
+# Ambiente local
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Versionamento
+.git/
+.gitignore
+.gitattributes
+
+# Dataset (120 mil imagens, usadas apenas no treino)
+dataset/
+
+# Artefatos de treino que não entram na inferência
+model/**/checkpoint-*/
+logs/
+
+# Não fazem parte da imagem de execução
+notebook/
+tests/
+*.md
+Procfile
+requirements-dev.txt

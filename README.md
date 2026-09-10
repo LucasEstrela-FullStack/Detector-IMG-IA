@@ -102,6 +102,8 @@ Ai-ModelDeepFake/
 ├── requirements.txt       # Dependências de execução
 ├── requirements-dev.txt   # Dependências de treino, notebook e testes
 ├── tests/                 # Testes automatizados da API
+├── Dockerfile             # Imagem de execução
+├── docker-compose.yml     # Orquestração local
 └── Procfile               # Configuração de deploy (gunicorn)
 ```
 
@@ -200,6 +202,20 @@ Se preferir não ativar o venv, chame o Python dele diretamente:
 ```bash
 .venv\Scripts\python.exe app.py
 ```
+
+---
+
+# 🐳 Docker
+
+Se preferir não instalar Python nem criar ambiente virtual, o container traz tudo pronto:
+
+```bash
+docker compose up --build
+```
+
+A aplicação fica em <http://localhost:5000>. Para encerrar, `docker compose down`.
+
+A imagem usa a build de CPU do PyTorch, roda como usuário sem privilégios e inclui o modelo. Detalhes e diagnóstico no [guia de instalação](GUIA-INSTALACAO.md).
 
 ---
 
