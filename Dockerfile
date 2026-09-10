@@ -1,3 +1,4 @@
+# Imagem da API. A interface web tem imagem própria, em frontend/Dockerfile.
 FROM python:3.12-slim
 
 # Não gera .pyc e não bufferiza a saída, para os logs aparecerem na hora
@@ -19,8 +20,6 @@ RUN pip install --no-cache-dir \
         -r requirements.txt
 
 COPY --chown=detector:detector app.py .
-COPY --chown=detector:detector templates/ templates/
-COPY --chown=detector:detector static/ static/
 COPY --chown=detector:detector model/ model/
 
 USER detector

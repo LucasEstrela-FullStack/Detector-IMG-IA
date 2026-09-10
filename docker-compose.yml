@@ -1,8 +1,21 @@
 services:
-  detector:
+  api:
     build: .
-    image: detector-imagem-ia
-    container_name: detector-imagem-ia
+    image: detector-imagem-ia-api
+    container_name: detector-imagem-ia-api
     ports:
       - "5000:5000"
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    image: detector-imagem-ia-web
+    container_name: detector-imagem-ia-web
+    ports:
+      - "5173:5173"
+    environment:
+      API_URL: http://api:5000
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped

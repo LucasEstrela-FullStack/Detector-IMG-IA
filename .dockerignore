@@ -14,6 +14,9 @@ __pycache__/
 # Dataset (120 mil imagens, usadas apenas no treino)
 dataset/
 
+# A interface web tem imagem própria, construída a partir de frontend/
+frontend/
+
 # Artefatos de treino que não entram na inferência
 model/**/checkpoint-*/
 logs/
