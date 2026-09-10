@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Um push novo na mesma branch cancela a execução anterior, que já ficou velha
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API · testes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixa o código
+        uses: actions/checkout@v7
+
+      # O modelo tem 328 MB no Git LFS e a cota de download do LFS é limitada.
+      # Com o cache, o download só acontece quando o modelo muda.
+      - name: Lista os arquivos do Git LFS
+        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-ids
+
+      - name: Restaura o modelo do cache
+        uses: actions/cache@v6
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-ids') }}
+
+      - name: Baixa o modelo
+        run: git lfs pull
+
+      - name: Instala o Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      # Mesmo índice de CPU do Dockerfile, para não baixar o torch com CUDA.
+      # Do requirements-dev só entra o pytest; o resto é ferramenta de treino.
+      - name: Instala as dependências
+        run: |
+          pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            -r requirements.txt \
+            $(grep '^pytest==' requirements-dev.txt)
+
+      - name: Roda os testes
+        run: pytest -v
+
+  web:
+    name: Interface · lint e build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Baixa o código
+        uses: actions/checkout@v7
+
+      - name: Instala o Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instala as dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  docker:
+    name: Docker · build e teste do Compose
+    runs-on: ubuntu-latest
+    # Só gasta tempo com as imagens depois que os testes e o build passaram
+    needs: [api, web]
+    steps:
+      - name: Baixa o código
+        uses: actions/checkout@v7
+
+      - name: Lista os arquivos do Git LFS
+        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-ids
+
+      - name: Restaura o modelo do cache
+        uses: actions/cache@v6
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-ids') }}
+
+      - name: Baixa o modelo
+        run: git lfs pull
+
+      # O --wait só retorna quando a API passa no healthcheck, com o modelo carregado
+      - name: Constrói as imagens e sobe o Compose
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      - name: Gera uma imagem de teste
+        run: |
+          docker compose exec -T api python -c \
+            "from PIL import Image; Image.new('RGB', (64, 64), (120, 80, 200)).save('/tmp/teste.png')"
+          docker compose cp api:/tmp/teste.png teste.png
+
+      - name: Analisa pela API
+        run: curl -fsS -F image=@teste.png http://localhost:5000/predict | jq -e '.label == "real" or .label == "fake"'
+
+      # Passa pelo proxy do Vite, que encaminha para o container da API.
+      # O retry cobre os segundos em que o Vite ainda está iniciando.
+      - name: Analisa pela interface
+        run: curl -fsS --retry 5 --retry-all-errors --retry-delay 2 -F image=@teste.png http://localhost:5173/predict | jq -e '.label == "real" or .label == "fake"'
+
+      - name: Mostra os logs dos containers
+        if: failure()
+        run: docker compose logs
+
+      - name: Derruba o Compose
+        if: always()
+        run: docker compose down
