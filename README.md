@@ -1,6 +1,6 @@
 # 🖼️ Imagem IA ou Imagem Real? Detecção de imagens DeepFake com Vision Transformers
 
-[![CI](https://github.com/LucasEstrela-FullStack/detector-imagem-ia/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasEstrela-FullStack/detector-imagem-ia/actions/workflows/ci.yml)
+[![CI](https://github.com/LucasEstrela-FullStack/Detector-IMG-IA/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasEstrela-FullStack/Detector-IMG-IA/actions/workflows/ci.yml)
 
 Aplicação web que recebe uma imagem e responde se ela é uma fotografia real ou se foi gerada por inteligência artificial, junto com o grau de confiança da resposta.
 

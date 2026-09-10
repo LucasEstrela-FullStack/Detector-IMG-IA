@@ -42,8 +42,8 @@ git lfs install
 Depois clone normalmente:
 
 ```bash
-git clone https://github.com/LucasEstrela-FullStack/detector-imagem-ia.git
-cd detector-imagem-ia
+git clone https://github.com/LucasEstrela-FullStack/Detector-IMG-IA.git
+cd Detector-IMG-IA
 ```
 
 ### Se você clonou antes de instalar o LFS
