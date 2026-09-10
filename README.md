@@ -100,7 +100,8 @@ Ai-ModelDeepFake/
 ├── templates/index.html   # Interface web
 ├── static/                # Recursos estáticos
 ├── requirements.txt       # Dependências de execução
-├── requirements-dev.txt   # Dependências de treino e notebook
+├── requirements-dev.txt   # Dependências de treino, notebook e testes
+├── tests/                 # Testes automatizados da API
 └── Procfile               # Configuração de deploy (gunicorn)
 ```
 
@@ -199,6 +200,23 @@ Se preferir não ativar o venv, chame o Python dele diretamente:
 ```bash
 .venv\Scripts\python.exe app.py
 ```
+
+---
+
+# 🧪 Testes
+
+A suíte cobre a API de ponta a ponta, usando o cliente de teste do Flask — não é preciso subir o servidor.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+São 18 testes divididos em quatro grupos: entrega da interface, respostas de sucesso do `/predict` (formatos de arquivo, rótulos em português, faixa da confiança), tratamento de erros (sem arquivo, arquivo inválido, arquivo vazio, método incorreto) e qualidade do modelo dentro do domínio do CIFAKE.
+
+Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados automaticamente em vez de falhar.
+
+O modelo é carregado uma única vez por sessão, então a suíte leva cerca de 17 segundos.
 
 ---
 
