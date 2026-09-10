@@ -1,4 +1,5 @@
 export type Previsao = {
+  label: 'real' | 'fake'
   prediction: string
   confidence: number
 }

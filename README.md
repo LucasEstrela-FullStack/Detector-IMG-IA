@@ -34,7 +34,7 @@ O percentual de confiança reflete a certeza do modelo dentro do domínio em que
 * 🔌 API em Flask com um único endpoint: `POST /predict`
 * 🤖 Roda em CPU, sem GPU
 * 🐳 Um `docker compose up` sobe a API e a interface juntas
-* 🧪 18 testes automatizados cobrindo a API
+* 🧪 19 testes automatizados cobrindo a API
 
 ---
 
@@ -243,7 +243,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-São 18 testes divididos em quatro grupos: status da API, respostas de sucesso do `/predict` (formatos de arquivo, rótulos em português, faixa da confiança), tratamento de erros (sem arquivo, arquivo inválido, arquivo vazio, método incorreto) e qualidade do modelo dentro do domínio do CIFAKE.
+São 19 testes divididos em quatro grupos: status da API, respostas de sucesso do `/predict` (formatos de arquivo, rótulos em português, chave estável, faixa da confiança), tratamento de erros (sem arquivo, arquivo inválido, arquivo vazio, método incorreto) e qualidade do modelo dentro do domínio do CIFAKE.
 
 Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados em vez de falhar.
 
@@ -288,10 +288,13 @@ Recebe uma imagem via `multipart/form-data` no campo `image`.
 
 ```json
 {
+  "label": "real",
   "prediction": "Imagem Real",
   "confidence": 0.9812
 }
 ```
+
+Use o `label` (`real` ou `fake`) para decidir algo no código. O `prediction` é o texto para exibir e pode mudar de redação.
 
 **Erros:** `400` quando não há arquivo na requisição, `500` quando a imagem não pôde ser processada.
 

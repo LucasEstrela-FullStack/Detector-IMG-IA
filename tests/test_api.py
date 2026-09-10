@@ -5,6 +5,7 @@ import pytest
 from conftest import imagem_em_bytes
 
 ROTULOS = {"Imagem Real", "Imagem Gerada por IA"}
+ROTULO_POR_CHAVE = {"real": "Imagem Real", "fake": "Imagem Gerada por IA"}
 
 
 class TestStatus:
@@ -25,12 +26,18 @@ class TestPredictSucesso:
         r = cliente.post("/predict", data={"image": (imagem_png, "teste.png")},
                          content_type="multipart/form-data")
         corpo = r.get_json()
-        assert set(corpo) == {"prediction", "confidence"}
+        assert set(corpo) == {"label", "prediction", "confidence"}
 
     def test_rotulo_esta_em_portugues(self, cliente, imagem_png):
         r = cliente.post("/predict", data={"image": (imagem_png, "teste.png")},
                          content_type="multipart/form-data")
         assert r.get_json()["prediction"] in ROTULOS
+
+    def test_chave_estavel_corresponde_ao_rotulo(self, cliente, imagem_png):
+        corpo = cliente.post("/predict", data={"image": (imagem_png, "teste.png")},
+                             content_type="multipart/form-data").get_json()
+        assert corpo["label"] in ROTULO_POR_CHAVE
+        assert corpo["prediction"] == ROTULO_POR_CHAVE[corpo["label"]]
 
     def test_confianca_e_probabilidade_valida(self, cliente, imagem_png):
         r = cliente.post("/predict", data={"image": (imagem_png, "teste.png")},
@@ -92,14 +99,12 @@ class TestQualidadeDoModelo:
 
     def test_reconhece_imagens_reais(self, cliente, dataset_teste):
         arquivos = sorted((dataset_teste / "REAL").iterdir())[:5]
-        acertos = sum(self._classifica(cliente, p)["prediction"] == "Imagem Real" for p in arquivos)
+        acertos = sum(self._classifica(cliente, p)["label"] == "real" for p in arquivos)
         assert acertos == len(arquivos)
 
     def test_reconhece_imagens_geradas(self, cliente, dataset_teste):
         arquivos = sorted((dataset_teste / "FAKE").iterdir())[:5]
-        acertos = sum(
-            self._classifica(cliente, p)["prediction"] == "Imagem Gerada por IA" for p in arquivos
-        )
+        acertos = sum(self._classifica(cliente, p)["label"] == "fake" for p in arquivos)
         assert acertos == len(arquivos)
 
     def test_confianca_alta_dentro_do_dominio(self, cliente, dataset_teste):

@@ -62,6 +62,9 @@ def predict():
         predicted_label = model.config.id2label[predicted_class_id]
         confidence = torch.softmax(logits, dim=-1)[0][predicted_class_id].item()
 
+        # Chave estável ("real" ou "fake") para quem consome a API; o texto de exibição pode mudar
+        label = predicted_label.lower()
+
         # Traduz os rótulos para exibição
         if predicted_label.lower() == "fake":
             predicted_label = "Imagem Gerada por IA"
@@ -72,6 +75,7 @@ def predict():
 
         # Devolve o resultado em JSON
         return jsonify({
+            "label": label,
             "prediction": predicted_label,
             "confidence": confidence
         })
