@@ -99,7 +99,8 @@ Ai-ModelDeepFake/
 ├── notebook/              # Notebook de treino e avaliação
 ├── templates/index.html   # Interface web
 ├── static/                # Recursos estáticos
-├── requirements.txt       # Dependências
+├── requirements.txt       # Dependências de execução
+├── requirements-dev.txt   # Dependências de treino e notebook
 └── Procfile               # Configuração de deploy (gunicorn)
 ```
 
@@ -149,9 +150,19 @@ Deu certo quando aparece `(.venv)` no início da linha do terminal.
 
 ### 4. Instale as dependências
 
+As dependências estão separadas em dois arquivos. Para **apenas usar o detector**:
+
 ```bash
 pip install -r requirements.txt
 ```
+
+Para **também treinar o modelo** e rodar o notebook:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+O arquivo de desenvolvimento já inclui o de execução, então não é preciso instalar os dois.
 
 O download passa de 2 GB por causa do PyTorch, então a primeira instalação demora.
 
@@ -179,6 +190,7 @@ Pontos que costumam gerar dúvida:
 * A primeira inicialização leva de **20 a 30 segundos**, porque carrega os 328 MB do modelo na memória. As previsões seguintes são rápidas.
 * **Abra sempre pelo endereço `http://localhost:5000`.** Clicar duas vezes no arquivo `templates/index.html` mostra a mesma tela, mas o envio falha: sem o servidor, não há para onde mandar a imagem.
 * Para encerrar, pressione **Ctrl+C** no terminal onde o servidor está rodando.
+* Na inicialização aparece um aviso dizendo que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. **É apenas um aviso**, e a aplicação funciona normalmente — o `torchvision` faz parte das dependências de desenvolvimento.
 
 ### Sem ativar o ambiente
 
@@ -240,7 +252,7 @@ Recebe uma imagem via `multipart/form-data` no campo `image`.
 
 O notebook em `notebook/` documenta o ajuste fino do ViT sobre o CIFAKE.
 
-Os caminhos internos são relativos à pasta `notebook/`, então **abra o Jupyter a partir dela**:
+Requer as dependências de desenvolvimento (`pip install -r requirements-dev.txt`). Os caminhos internos são relativos à pasta `notebook/`, então **abra o Jupyter a partir dela**:
 
 ```bash
 cd notebook

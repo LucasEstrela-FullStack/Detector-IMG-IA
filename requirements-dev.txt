@@ -1,0 +1,15 @@
+# Dependências para treinar o modelo e rodar o notebook.
+# Inclui tudo o que a aplicação precisa, mais as ferramentas de treino.
+
+-r requirements.txt
+
+torchvision==0.29.0
+accelerate==1.14.0
+datasets==5.0.1
+evaluate==0.4.6
+imbalanced-learn==0.14.2
+matplotlib==3.11.1
+pandas==3.0.5
+scikit-learn==1.9.0
+tqdm==4.70.0
+jupyter==1.1.1
