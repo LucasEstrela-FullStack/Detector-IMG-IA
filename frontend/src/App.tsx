@@ -178,7 +178,7 @@ export default function App() {
                       : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
                   )}
                 >
-                  {ehIA ? 'Sintética' : 'Autêntica'}
+                  {ehIA ? 'IA' : 'Real'}
                 </Badge>
               </div>
               <p className="text-2xl font-semibold">{previsao.prediction}</p>
@@ -207,8 +207,8 @@ export default function App() {
 
         <CardFooter>
           <p className="text-xs text-muted-foreground">
-            O modelo foi treinado com imagens de 32×32 pixels do CIFAKE, sem rostos. Em fotos de
-            alta resolução, rostos ou imagens de geradores modernos, o resultado não é confiável.
+            O modelo aprendeu com imagens pequenas, de 32×32 pixels, e nenhuma delas tinha rostos.
+            Em fotos grandes, retratos ou imagens de geradores recentes, o resultado não é confiável.
           </p>
         </CardFooter>
       </Card>
