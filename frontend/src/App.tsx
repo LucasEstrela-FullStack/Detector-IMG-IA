@@ -39,6 +39,19 @@ export default function App() {
     return () => URL.revokeObjectURL(preview)
   }, [preview])
 
+  // Soltar um arquivo fora da área de envio faria o navegador abrir a imagem e sair da página
+  useEffect(() => {
+    const bloquear = (evento: globalThis.DragEvent) => {
+      if (evento.dataTransfer?.types.includes('Files')) evento.preventDefault()
+    }
+    window.addEventListener('dragover', bloquear)
+    window.addEventListener('drop', bloquear)
+    return () => {
+      window.removeEventListener('dragover', bloquear)
+      window.removeEventListener('drop', bloquear)
+    }
+  }, [])
+
   function selecionar(novo: File | undefined) {
     if (!novo) return
     setPrevisao(null)
