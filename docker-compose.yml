@@ -1,0 +1,8 @@
+services:
+  detector:
+    build: .
+    image: detector-imagem-ia
+    container_name: detector-imagem-ia
+    ports:
+      - "5000:5000"
+    restart: unless-stopped

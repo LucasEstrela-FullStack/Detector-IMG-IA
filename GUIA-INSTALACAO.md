@@ -195,7 +195,77 @@ waitress-serve --port=5000 app:app
 
 ---
 
-## 8. Solução de problemas
+## 8. Execução com Docker
+
+Alternativa às seções 3 a 7: o container já traz Python, dependências e modelo. Não é preciso instalar Python nem criar ambiente virtual na sua máquina.
+
+Requer o Docker instalado e **em execução** — no Windows e no macOS, o Docker Desktop precisa estar aberto.
+
+### Subir
+
+```bash
+docker compose up --build
+```
+
+Acesse <http://localhost:5000>. A primeira construção baixa as dependências e leva vários minutos; as seguintes reaproveitam o cache.
+
+### Encerrar
+
+```bash
+docker compose down
+```
+
+### Sem o Compose
+
+```bash
+docker build -t detector-imagem-ia .
+docker run -d --name detector -p 5000:5000 detector-imagem-ia
+```
+
+### O que a imagem contém
+
+| Item | Detalhe |
+|---|---|
+| Base | `python:3.12-slim` |
+| PyTorch | Build de CPU (`2.14.0+cpu`), sem as bibliotecas CUDA |
+| Servidor | gunicorn com 1 worker e timeout de 120 s |
+| Usuário | `detector`, sem privilégios de root |
+| Modelo | Incluído na imagem, 328 MB |
+
+O `--timeout 120` é necessário porque o worker carrega o modelo ao iniciar, e o padrão de 30 segundos não é suficiente.
+
+Ficam fora da imagem, pelo `.dockerignore`: o dataset, o ambiente virtual local, o notebook, os testes e os checkpoints de treino.
+
+### Mudar a porta
+
+Edite o mapeamento no [`docker-compose.yml`](docker-compose.yml). Para expor na 8080:
+
+```yaml
+ports:
+  - "8080:5000"
+```
+
+O primeiro número é a porta na sua máquina; o segundo é a porta dentro do container, que não deve ser alterada.
+
+### Verificar a saúde do container
+
+A imagem define um healthcheck. Para consultar:
+
+```bash
+docker inspect --format "{{.State.Health.Status}}" detector
+```
+
+Retorna `starting` durante o carregamento do modelo e `healthy` quando a aplicação está respondendo.
+
+### Ver os logs
+
+```bash
+docker compose logs -f
+```
+
+---
+
+## 9. Solução de problemas
 
 ### `ModuleNotFoundError`
 
@@ -238,9 +308,25 @@ falling back to `ViTImageProcessorPil`
 
 O Python não está no PATH. Reinstale marcando **"Add Python to PATH"**, ou use `py` no lugar de `python` no Windows.
 
+### `Cannot connect to the Docker daemon`
+
+O Docker está instalado mas não está em execução. Abra o Docker Desktop e aguarde ele terminar de iniciar.
+
+### O build do Docker falha com erro de certificado SSL
+
+```
+CERTIFICATE_VERIFY_FAILED: self-signed certificate
+```
+
+Costuma ser instabilidade momentânea de rede — tente novamente antes de qualquer outra coisa. Se persistir, provavelmente há um proxy corporativo inspecionando o tráfego TLS, e o certificado da empresa precisa ser adicionado à imagem. **Não use `--trusted-host` como solução**: isso desativa a verificação de certificados e deixa a imagem vulnerável a interceptação.
+
+### O container inicia mas o healthcheck fica em `starting`
+
+Normal nos primeiros 90 segundos, enquanto o modelo é carregado. Se continuar assim depois disso, veja os logs com `docker compose logs -f`.
+
 ---
 
-## 9. Remover a instalação
+## 10. Remover a instalação
 
 Todo o ambiente fica dentro da pasta do projeto. Para desinstalar, apague o diretório `.venv`:
 
@@ -249,3 +335,10 @@ rm -rf .venv
 ```
 
 Nada é gravado fora da pasta do projeto, nem no registro do Windows.
+
+Se você usou Docker, remova também o container e a imagem:
+
+```bash
+docker compose down
+docker rmi detector-imagem-ia
+```
