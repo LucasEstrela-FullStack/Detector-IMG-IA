@@ -138,7 +138,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Os 18 testes devem passar. Os que dependem do dataset são ignorados automaticamente quando ele não está presente, e isso é esperado.
+Os 19 testes devem passar. Os que dependem do dataset são ignorados automaticamente quando ele não está presente, e isso é esperado.
 
 ---
 

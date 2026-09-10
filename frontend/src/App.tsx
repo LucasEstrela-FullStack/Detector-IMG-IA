@@ -93,7 +93,7 @@ export default function App() {
     setErro(null)
   }
 
-  const ehIA = previsao?.prediction === 'Imagem Gerada por IA'
+  const ehIA = previsao?.label === 'fake'
   const confianca = previsao ? Math.round(previsao.confidence * 1000) / 10 : 0
 
   return (
