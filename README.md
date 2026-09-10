@@ -1,5 +1,7 @@
 # 🖼️ Imagem IA ou Imagem Real? Detecção de imagens DeepFake com Vision Transformers
 
+[![CI](https://github.com/LucasEstrela-FullStack/detector-imagem-ia/actions/workflows/ci.yml/badge.svg)](https://github.com/LucasEstrela-FullStack/detector-imagem-ia/actions/workflows/ci.yml)
+
 Aplicação web que recebe uma imagem e responde se ela é uma fotografia real ou se foi gerada por inteligência artificial, junto com o grau de confiança da resposta.
 
 ---
@@ -35,6 +37,7 @@ O percentual de confiança reflete a certeza do modelo dentro do domínio em que
 * 🤖 Roda em CPU, sem GPU
 * 🐳 Um `docker compose up` sobe a API e a interface juntas
 * 🧪 19 testes automatizados cobrindo a API
+* ✅ CI no GitHub Actions a cada push e pull request
 
 ---
 
@@ -101,6 +104,7 @@ Ai-ModelDeepFake/
 ├── tests/                 # Testes automatizados da API
 ├── Dockerfile             # Imagem da API
 ├── docker-compose.yml     # Sobe a API e a interface juntas
+├── .github/workflows/     # CI no GitHub Actions
 └── Procfile               # Configuração de deploy (gunicorn)
 ```
 
@@ -248,6 +252,20 @@ São 19 testes divididos em quatro grupos: status da API, respostas de sucesso d
 Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados em vez de falhar.
 
 O modelo é carregado uma única vez por sessão de testes, e não a cada teste.
+
+## Integração contínua
+
+O workflow `CI`, em `.github/workflows/ci.yml`, roda a cada push na `main` e em todo pull request. Também dá para disparar manualmente pela aba Actions. São três jobs:
+
+| Job | O que faz |
+|---|---|
+| **API · testes** | Instala as dependências de execução e roda o `pytest` |
+| **Interface · lint e build** | Roda `npm ci`, `npm run lint` e `npm run build` na pasta `frontend` |
+| **Docker · build e teste do Compose** | Constrói as duas imagens, sobe o Compose, espera a API ficar saudável e envia uma imagem pela API e pela interface |
+
+O job de Docker só começa quando os outros dois passam, porque é o mais demorado.
+
+Na CI, os testes de qualidade do modelo são ignorados, porque o dataset não fica no repositório. O modelo de 328 MB vem do Git LFS e fica em cache entre as execuções: a cota de download do LFS no GitHub é limitada, e assim ele só é baixado de novo quando muda.
 
 ---
 
