@@ -1,19 +1,15 @@
-# 🖼️ Imagem IA ou Imagem Real? — Detecção de Imagem DeepFake com Vision Transformers
+# 🖼️ Imagem IA ou Imagem Real? Detecção de imagens DeepFake com Vision Transformers
 
-Sistema de detecção de imagens geradas por IA, construído de ponta a ponta com **Python, Flask, Hugging Face Transformers, Vision Transformers (ViT) e deep learning**. A aplicação analisa imagens enviadas e prevê se são **geradas por IA (DeepFake)** ou **reais**, ajudando a identificar mídia sintética criada por modelos generativos.
+Aplicação web que recebe uma imagem e responde se ela é uma fotografia real ou se foi gerada por inteligência artificial, junto com o grau de confiança da resposta.
 
 ---
 
 # 📖 Visão geral do projeto
 
-Com o avanço acelerado das tecnologias de IA generativa, distinguir imagens geradas por IA de fotografias autênticas ficou cada vez mais difícil. Imagens DeepFake podem ser usadas para desinformação, fraude de identidade e manipulação digital, o que torna as técnicas de detecção cada vez mais importantes.
-
-O projeto usa um modelo **Vision Transformer (ViT)** para classificar as imagens enviadas como:
+Distinguir uma imagem gerada por IA de uma fotografia ficou difícil. O projeto usa um modelo **Vision Transformer (ViT)** para classificar as imagens enviadas como:
 
 * 🟢 **Imagem Real**
 * 🔴 **Imagem Gerada por IA / DeepFake**
-
-O usuário envia uma imagem pela interface web e recebe a previsão do modelo na hora.
 
 ---
 
@@ -28,19 +24,17 @@ Na prática:
 
 O percentual de confiança reflete a certeza do modelo dentro do domínio em que foi treinado, e não garante que a resposta esteja correta fora dele.
 
-**O limite de 32×32 vem do treino, não do código.** O modelo pode ser retreinado com imagens maiores — veja [Retreinar para imagens maiores](#retreinar-para-imagens-maiores).
+**O limite de 32×32 vem do treino, não do código.** O modelo pode ser retreinado com imagens maiores, e o passo a passo está em [Retreinar para imagens maiores](#retreinar-para-imagens-maiores).
 
 ---
 
 # ✨ Características
 
-* 🖼️ Detecção de imagens geradas por IA (DeepFake)
-* 📤 Interface web em React, com arrastar e soltar e tema claro/escuro
-* 🤖 Classificação baseada em Vision Transformer (ViT)
-* ⚡ Inferência rápida
-* 🌐 Aplicação web em Flask
-* 💻 Configuração local fácil
-* ☁️ Pronta para deploy em nuvem
+* 📤 Interface web em React com arrastar e soltar, pré-visualização da imagem e tema claro/escuro automático
+* 🔌 API em Flask com um único endpoint: `POST /predict`
+* 🤖 Roda em CPU, sem GPU
+* 🐳 Um `docker compose up` sobe a API e a interface juntas
+* 🧪 18 testes automatizados cobrindo a API
 
 ---
 
@@ -118,7 +112,7 @@ Ai-ModelDeepFake/
 
 * **Python 3.10 ou superior** (o projeto foi validado no 3.14)
 * **Node.js** em versão atual (validado no 26), para rodar a interface
-* Cerca de **3 GB livres em disco** — só o PyTorch ocupa mais de 2 GB
+* Cerca de **3 GB livres em disco**, porque só o PyTorch ocupa mais de 2 GB
 * Os pesos do modelo em `model/ai_vs_real_image_detection/`, com o `model.safetensors` de 328 MB
 
 Confirme a versão do Python antes de começar:
@@ -187,7 +181,7 @@ cd ..
 
 São dois processos, cada um em seu terminal: a API e a interface.
 
-**Terminal 1 — API**, com o ambiente virtual ativado, na raiz do projeto:
+**Terminal 1 (API)**, com o ambiente virtual ativado, na raiz do projeto:
 
 ```bash
 python app.py
@@ -200,21 +194,21 @@ INFO:root:Modelo e processador carregados com sucesso!
  * Running on http://127.0.0.1:5000
 ```
 
-**Terminal 2 — interface:**
+**Terminal 2 (interface):**
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Abra o navegador em **<http://localhost:5173>**, arraste ou escolha uma imagem e clique em **Analisar imagem**. A interface encaminha a análise para a API na porta 5000.
+Abra o navegador em <http://localhost:5173>, arraste ou escolha uma imagem e clique em **Analisar imagem**. A interface encaminha a análise para a API na porta 5000.
 
 Pontos que costumam gerar dúvida:
 
-* A primeira inicialização da API leva de **20 a 30 segundos**, porque carrega os 328 MB do modelo na memória. As previsões seguintes são rápidas.
+* A primeira inicialização da API leva de 20 a 30 segundos, porque carrega os 328 MB do modelo na memória. As previsões seguintes são rápidas.
 * A interface recarrega sozinha quando você edita arquivos em `frontend/src`.
 * Para encerrar, pressione **Ctrl+C** em cada terminal.
-* Na inicialização da API aparece um aviso dizendo que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. **É apenas um aviso**, e a aplicação funciona normalmente — o `torchvision` faz parte das dependências de desenvolvimento.
+* Na inicialização da API aparece um aviso dizendo que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. É só um aviso e a aplicação funciona normalmente. O `torchvision` faz parte das dependências de desenvolvimento.
 
 ### Sem ativar o ambiente
 
@@ -242,7 +236,7 @@ A interface só inicia depois que a API passa no healthcheck, ou seja, com o mod
 
 # 🧪 Testes
 
-A suíte cobre a API de ponta a ponta, usando o cliente de teste do Flask — não é preciso subir o servidor.
+Os testes chamam a API pelo cliente de teste do Flask, então não é preciso subir o servidor.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -253,7 +247,7 @@ São 18 testes divididos em quatro grupos: status da API, respostas de sucesso d
 
 Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados em vez de falhar.
 
-O modelo é carregado uma única vez por sessão, então a suíte leva cerca de 17 segundos.
+O modelo é carregado uma única vez por sessão de testes, e não a cada teste.
 
 ---
 
@@ -307,7 +301,7 @@ Recebe uma imagem via `multipart/form-data` no campo `image`.
 
 O notebook em `notebook/` documenta o ajuste fino do ViT sobre o CIFAKE. **O modelo atual foi treinado com imagens de 32×32 pixels**, e por isso o `app.py` reduz toda imagem enviada a esse tamanho antes da previsão.
 
-Requer as dependências de desenvolvimento (`pip install -r requirements-dev.txt`). Os caminhos internos são relativos à pasta `notebook/`, então **abra o Jupyter a partir dela**:
+Requer as dependências de desenvolvimento (`pip install -r requirements-dev.txt`). Os caminhos internos são relativos à pasta `notebook/`, então abra o Jupyter a partir dela:
 
 ```bash
 cd notebook
@@ -320,7 +314,7 @@ Antes de citar os resultados atuais: o notebook junta as pastas `train` e `test`
 
 ## Retreinar para imagens maiores
 
-O limite de 32×32 vem do dataset, não da arquitetura. O Vision Transformer trabalha nativamente com **224×224**: hoje a imagem é reduzida a 32×32 e depois ampliada de volta para 224×224 pelo processador, só para imitar as miniaturas do CIFAKE. Com um dataset de alta resolução, o modelo passa a aproveitar os 224×224 de verdade.
+O limite de 32×32 vem do dataset, não da arquitetura. O Vision Transformer trabalha nativamente com 224×224: hoje a imagem é reduzida a 32×32 e depois ampliada de volta para 224×224 pelo processador, só para imitar as miniaturas do CIFAKE. Com um dataset de alta resolução, o modelo passa a aproveitar os 224×224 de verdade.
 
 1. **Monte o dataset** em `dataset/`, com a mesma estrutura: `train/REAL`, `train/FAKE`, `test/REAL` e `test/FAKE`. Os nomes das pastas precisam ser exatamente `REAL` e `FAKE`, porque é deles que o notebook tira os rótulos. Para cobrir o uso real, inclua fotografias em alta resolução, rostos e imagens de geradores atuais, mantendo as duas classes balanceadas.
 2. **Parta do ViT genérico.** Na célula 12 do notebook, troque o `model_str` para `google/vit-base-patch16-224-in21k`. O checkpoint atual foi ajustado para miniaturas ampliadas e levaria esse viés para o novo treino.
@@ -340,18 +334,17 @@ O limite de 32×32 vem do dataset, não da arquitetura. O Vision Transformer tra
 * Visualizações de IA explicável (Grad-CAM ou mapas de atenção)
 * Suporte a múltiplos modelos de geração de imagem
 * Classificação em lote
-* Containerização com Docker
 * Deploy em nuvem (AWS, Azure, GCP)
-* Testes automatizados e endpoint de health check
+* Testes automatizados para a interface
 
 ---
 
 # 🤝 Contribuições
 
-Contribuições, sugestões de funcionalidades e melhorias são bem-vindas. Sinta-se à vontade para fazer um fork do repositório e abrir um Pull Request.
+Para contribuir, faça um fork do repositório e abra um Pull Request. Sugestões podem ser enviadas como issue.
 
 ---
 
 # 📄 Licença
 
-Projeto destinado a fins educacionais, de pesquisa e aprendizado. Não deve ser utilizado como método único de verificação de autenticidade de imagens em aplicações legais, forenses ou críticas de segurança.
+Projeto para fins educacionais e de pesquisa. Não use como único método para verificar a autenticidade de imagens em contextos legais, forenses ou de segurança.

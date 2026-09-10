@@ -14,7 +14,7 @@ Documento operacional: como colocar o projeto para funcionar, o que pode ser aju
 | Memória RAM | 2 GB livres | O modelo ocupa cerca de 350 MB carregado |
 | Git LFS | qualquer versão | **Obrigatório** — sem ele o modelo não é baixado |
 
-Sistemas: Windows, Linux e macOS. Não é necessária GPU — a inferência roda em CPU.
+Sistemas: Windows, Linux e macOS. Não é necessária GPU: a inferência roda em CPU.
 
 Confira o que já está instalado:
 
@@ -138,7 +138,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Os 18 testes devem passar. Os que dependem do dataset são ignorados automaticamente quando ele não está presente — isso é esperado.
+Os 18 testes devem passar. Os que dependem do dataset são ignorados automaticamente quando ele não está presente, e isso é esperado.
 
 ---
 
@@ -174,13 +174,13 @@ Aponte para outro diretório se você mantiver os pesos fora do projeto. O camin
 image = image.resize((32, 32))
 ```
 
-**Não altere sem retreinar o modelo.** O modelo atual foi treinado com imagens de 32×32 do CIFAKE, e esse redimensionamento alinha a entrada ao domínio de treino. Aumentar o valor não melhora a precisão — apenas afasta a entrada daquilo que o modelo aprendeu.
+**Não altere sem retreinar o modelo.** O modelo atual foi treinado com imagens de 32×32 do CIFAKE, e esse redimensionamento alinha a entrada ao domínio de treino. Aumentar o valor não melhora a precisão. Só afasta a entrada daquilo que o modelo aprendeu.
 
 Para trabalhar com imagens maiores, o caminho é retreinar o modelo com um dataset de alta resolução e depois remover essa linha. O passo a passo está no README, em [Retreinar para imagens maiores](README.md#retreinar-para-imagens-maiores).
 
 ### Endereço da API usado pela interface
 
-A interface não chama a API diretamente: o servidor do Vite encaminha as requisições para `/predict`, conforme o [`frontend/vite.config.ts`](frontend/vite.config.ts). O destino padrão é `http://127.0.0.1:5000` e pode ser trocado pela variável de ambiente `API_URL` — é assim que o Docker Compose aponta a interface para o serviço da API.
+A interface não chama a API diretamente: o servidor do Vite encaminha as requisições para `/predict`, conforme o [`frontend/vite.config.ts`](frontend/vite.config.ts). O destino padrão é `http://127.0.0.1:5000` e pode ser trocado pela variável de ambiente `API_URL`. É assim que o Docker Compose aponta a interface para o serviço da API.
 
 ```bash
 API_URL=http://outro-endereco:5000 npm run dev
@@ -230,7 +230,7 @@ O `--timeout 120` é necessário porque o worker carrega o modelo ao iniciar e o
 
 ### Produção da API no Windows
 
-O gunicorn **não funciona no Windows** — ele depende do módulo `fcntl`, exclusivo de sistemas Unix, e falha com `ModuleNotFoundError`. Use o waitress:
+O gunicorn **não funciona no Windows**, porque depende do módulo `fcntl`, exclusivo de sistemas Unix, e falha com `ModuleNotFoundError`. Use o waitress:
 
 ```bash
 pip install waitress
@@ -243,7 +243,7 @@ waitress-serve --port=5000 app:app
 
 Alternativa às seções 3 a 7: o Compose sobe dois containers, a API e a interface, com tudo pronto. Não é preciso instalar Python nem Node na sua máquina.
 
-Requer o Docker instalado e **em execução** — no Windows e no macOS, o Docker Desktop precisa estar aberto.
+Requer o Docker instalado e **em execução**. No Windows e no macOS, o Docker Desktop precisa estar aberto.
 
 ### Subir
 
@@ -336,7 +336,7 @@ Encerre o processo ou troque a porta conforme a seção 6.
 
 ### A interface abre, mas a análise falha
 
-A interface depende da API para a previsão. Confirme que o `python app.py` está rodando e que o modelo terminou de carregar — o terminal da API mostra `Modelo e processador carregados com sucesso!`. O terminal do Vite também registra o erro de conexão quando a API não responde.
+A interface depende da API para a previsão. Confirme que o `python app.py` está rodando e que o modelo terminou de carregar: o terminal da API mostra `Modelo e processador carregados com sucesso!`. O terminal do Vite também registra o erro de conexão quando a API não responde.
 
 ### `npm` não é reconhecido como comando
 
@@ -365,7 +365,7 @@ O Docker está instalado mas não está em execução. Abra o Docker Desktop e a
 CERTIFICATE_VERIFY_FAILED: self-signed certificate
 ```
 
-Costuma ser instabilidade momentânea de rede — tente novamente antes de qualquer outra coisa. Se persistir, provavelmente há um proxy corporativo inspecionando o tráfego TLS, e o certificado da empresa precisa ser adicionado à imagem. **Não use `--trusted-host` como solução**: isso desativa a verificação de certificados e deixa a imagem vulnerável a interceptação.
+Costuma ser instabilidade momentânea de rede, então tente de novo antes de qualquer outra coisa. Se persistir, provavelmente há um proxy corporativo inspecionando o tráfego TLS, e o certificado da empresa precisa ser adicionado à imagem. **Não use `--trusted-host` como solução**: isso desativa a verificação de certificados e deixa a imagem vulnerável a interceptação.
 
 ### O container inicia mas o healthcheck fica em `starting`
 
