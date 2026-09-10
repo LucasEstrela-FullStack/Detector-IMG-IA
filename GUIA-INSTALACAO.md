@@ -174,7 +174,9 @@ Aponte para outro diretório se você mantiver os pesos fora do projeto. O camin
 image = image.resize((32, 32))
 ```
 
-**Não altere sem retreinar o modelo.** As imagens do CIFAKE são nativamente 32×32, e esse redimensionamento alinha a entrada ao domínio de treino. Aumentar o valor não melhora a precisão — apenas afasta a entrada daquilo que o modelo aprendeu.
+**Não altere sem retreinar o modelo.** O modelo atual foi treinado com imagens de 32×32 do CIFAKE, e esse redimensionamento alinha a entrada ao domínio de treino. Aumentar o valor não melhora a precisão — apenas afasta a entrada daquilo que o modelo aprendeu.
+
+Para trabalhar com imagens maiores, o caminho é retreinar o modelo com um dataset de alta resolução e depois remover essa linha. O passo a passo está no README, em [Retreinar para imagens maiores](README.md#retreinar-para-imagens-maiores).
 
 ### Endereço da API usado pela interface
 
