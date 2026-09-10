@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 from transformers import ViTImageProcessor, ViTForImageClassification
 from PIL import Image
 import torch
@@ -29,9 +29,10 @@ except Exception as e:
     logging.error(f"Erro ao carregar o modelo ou o processador: {e}")
     raise RuntimeError("Falha ao carregar o modelo ou o processador")
 
+# Status da API; a interface web roda separada, na pasta frontend
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return jsonify({"status": "ok", "endpoint": "POST /predict"})
 
 # Endpoint de previsão
 @app.route('/predict', methods=['POST'])
