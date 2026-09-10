@@ -9,6 +9,7 @@ Documento operacional: como colocar o projeto para funcionar, o que pode ser aju
 | Item | Mínimo | Observação |
 |---|---|---|
 | Python | 3.10 | Validado no 3.14.7 |
+| Node.js | versão atual | Validado no 26. Necessário para rodar a interface |
 | Espaço em disco | 3 GB | O PyTorch sozinho passa de 2 GB |
 | Memória RAM | 2 GB livres | O modelo ocupa cerca de 350 MB carregado |
 | Git LFS | qualquer versão | **Obrigatório** — sem ele o modelo não é baixado |
@@ -19,9 +20,12 @@ Confira o que já está instalado:
 
 ```bash
 python --version
+node --version
 git --version
 git lfs version
 ```
+
+Quem for usar apenas o Docker (seção 8) não precisa de Python nem de Node na máquina.
 
 ---
 
@@ -113,6 +117,16 @@ O arquivo de desenvolvimento já inclui o de execução via `-r`, então nunca �
 
 A primeira instalação baixa mais de 2 GB por causa do PyTorch e pode levar vários minutos.
 
+### Interface web
+
+A interface é um projeto React + TypeScript em `frontend/`, rodado com Vite e estilizado com Tailwind CSS e shadcn/ui. É independente do Flask: basta instalar as dependências dela.
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
 ---
 
 ## 5. Verificar a instalação
@@ -124,13 +138,13 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Os 18 testes devem passar em cerca de 16 segundos. Os testes que dependem do dataset são ignorados automaticamente quando ele não está presente — isso é esperado.
+Os 18 testes devem passar. Os que dependem do dataset são ignorados automaticamente quando ele não está presente — isso é esperado.
 
 ---
 
 ## 6. Configuração
 
-O projeto não usa arquivo de configuração nem variáveis de ambiente. Os ajustes são feitos editando diretamente o `app.py`.
+A API não usa arquivo de configuração nem variáveis de ambiente: os ajustes são feitos editando diretamente o `app.py`. A interface tem uma única variável, `API_URL`, descrita no fim desta seção.
 
 ### Porta e endereço
 
@@ -162,19 +176,47 @@ image = image.resize((32, 32))
 
 **Não altere sem retreinar o modelo.** As imagens do CIFAKE são nativamente 32×32, e esse redimensionamento alinha a entrada ao domínio de treino. Aumentar o valor não melhora a precisão — apenas afasta a entrada daquilo que o modelo aprendeu.
 
+### Endereço da API usado pela interface
+
+A interface não chama a API diretamente: o servidor do Vite encaminha as requisições para `/predict`, conforme o [`frontend/vite.config.ts`](frontend/vite.config.ts). O destino padrão é `http://127.0.0.1:5000` e pode ser trocado pela variável de ambiente `API_URL` — é assim que o Docker Compose aponta a interface para o serviço da API.
+
+```bash
+API_URL=http://outro-endereco:5000 npm run dev
+```
+
 ---
 
 ## 7. Execução
 
 ### Desenvolvimento
 
+São dois processos, cada um em seu terminal.
+
+**API:**
+
 ```bash
 python app.py
 ```
 
-Acesse <http://localhost:5000>. A primeira inicialização leva de 20 a 30 segundos para carregar o modelo na memória; as previsões seguintes são rápidas.
+A primeira inicialização leva de 20 a 30 segundos para carregar o modelo na memória; as previsões seguintes são rápidas. Acessar <http://localhost:5000> retorna apenas o status da API em JSON.
 
-### Produção em Linux e macOS
+**Interface:**
+
+```bash
+cd frontend
+npm run dev
+```
+
+Acesse <http://localhost:5173>. A interface recarrega sozinha quando você edita arquivos em `frontend/src`.
+
+Para adicionar componentes do shadcn/ui:
+
+```bash
+cd frontend
+npx shadcn@latest add <componente>
+```
+
+### Produção da API em Linux e macOS
 
 ```bash
 gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 120 app:app
@@ -184,7 +226,7 @@ O `--timeout 120` é necessário porque o worker carrega o modelo ao iniciar e o
 
 **Sobre o número de workers:** cada worker carrega sua própria cópia do modelo, consumindo cerca de 350 MB de RAM. Calcule a memória disponível antes de aumentar.
 
-### Produção no Windows
+### Produção da API no Windows
 
 O gunicorn **não funciona no Windows** — ele depende do módulo `fcntl`, exclusivo de sistemas Unix, e falha com `ModuleNotFoundError`. Use o waitress:
 
@@ -197,7 +239,7 @@ waitress-serve --port=5000 app:app
 
 ## 8. Execução com Docker
 
-Alternativa às seções 3 a 7: o container já traz Python, dependências e modelo. Não é preciso instalar Python nem criar ambiente virtual na sua máquina.
+Alternativa às seções 3 a 7: o Compose sobe dois containers, a API e a interface, com tudo pronto. Não é preciso instalar Python nem Node na sua máquina.
 
 Requer o Docker instalado e **em execução** — no Windows e no macOS, o Docker Desktop precisa estar aberto.
 
@@ -207,7 +249,9 @@ Requer o Docker instalado e **em execução** — no Windows e no macOS, o Docke
 docker compose up --build
 ```
 
-Acesse <http://localhost:5000>. A primeira construção baixa as dependências e leva vários minutos; as seguintes reaproveitam o cache.
+Acesse a interface em <http://localhost:5173>. A API fica em <http://localhost:5000>. A primeira construção baixa as dependências e leva vários minutos; as seguintes reaproveitam o cache.
+
+A interface só é iniciada depois que a API passa no healthcheck, ou seja, com o modelo já carregado.
 
 ### Encerrar
 
@@ -215,44 +259,41 @@ Acesse <http://localhost:5000>. A primeira construção baixa as dependências e
 docker compose down
 ```
 
-### Sem o Compose
+### Só a API, sem o Compose
 
 ```bash
-docker build -t detector-imagem-ia .
-docker run -d --name detector -p 5000:5000 detector-imagem-ia
+docker build -t detector-imagem-ia-api .
+docker run -d --name detector-api -p 5000:5000 detector-imagem-ia-api
 ```
 
-### O que a imagem contém
+### O que cada imagem contém
 
-| Item | Detalhe |
-|---|---|
-| Base | `python:3.12-slim` |
-| PyTorch | Build de CPU (`2.14.0+cpu`), sem as bibliotecas CUDA |
-| Servidor | gunicorn com 1 worker e timeout de 120 s |
-| Usuário | `detector`, sem privilégios de root |
-| Modelo | Incluído na imagem, 328 MB |
+| Serviço | Imagem | Detalhe |
+|---|---|---|
+| `api` | `python:3.12-slim` | PyTorch de CPU (`2.14.0+cpu`), gunicorn com 1 worker e timeout de 120 s, usuário `detector` sem privilégios, modelo de 328 MB incluído |
+| `web` | `node:26-slim` | Dependências instaladas com `npm ci` e servidor do Vite exposto na porta 5173 |
 
-O `--timeout 120` é necessário porque o worker carrega o modelo ao iniciar, e o padrão de 30 segundos não é suficiente.
+O `--timeout 120` da API é necessário porque o worker carrega o modelo ao iniciar, e o padrão de 30 segundos não é suficiente.
 
-Ficam fora da imagem, pelo `.dockerignore`: o dataset, o ambiente virtual local, o notebook, os testes e os checkpoints de treino.
+Ficam fora da imagem da API, pelo `.dockerignore`: o dataset, o ambiente virtual local, a pasta `frontend`, o notebook, os testes e os checkpoints de treino. A imagem da interface ignora o `node_modules` local, porque as dependências da máquina podem ser de outro sistema operacional.
 
 ### Mudar a porta
 
-Edite o mapeamento no [`docker-compose.yml`](docker-compose.yml). Para expor na 8080:
+Edite o mapeamento no [`docker-compose.yml`](docker-compose.yml). Para expor a interface na 8080:
 
 ```yaml
 ports:
-  - "8080:5000"
+  - "8080:5173"
 ```
 
 O primeiro número é a porta na sua máquina; o segundo é a porta dentro do container, que não deve ser alterada.
 
 ### Verificar a saúde do container
 
-A imagem define um healthcheck. Para consultar:
+A imagem da API define um healthcheck. Para consultar:
 
 ```bash
-docker inspect --format "{{.State.Health.Status}}" detector
+docker inspect --format "{{.State.Health.Status}}" detector-imagem-ia-api
 ```
 
 Retorna `starting` durante o carregamento do modelo e `healthy` quando a aplicação está respondendo.
@@ -291,9 +332,13 @@ lsof -i :5000
 
 Encerre o processo ou troque a porta conforme a seção 6.
 
-### A página abre, mas o envio da imagem falha
+### A interface abre, mas a análise falha
 
-A interface foi aberta como arquivo local, dando duplo clique em `templates/index.html`. A tela aparece igual, mas o JavaScript envia a imagem para `/predict`, que só existe no servidor. Acesse por `http://localhost:5000`.
+A interface depende da API para a previsão. Confirme que o `python app.py` está rodando e que o modelo terminou de carregar — o terminal da API mostra `Modelo e processador carregados com sucesso!`. O terminal do Vite também registra o erro de conexão quando a API não responde.
+
+### `npm` não é reconhecido como comando
+
+O Node.js não está instalado ou não está no PATH. Instale a versão atual pelo site oficial e abra um terminal novo.
 
 ### Aviso sobre o torchvision na inicialização
 
@@ -328,17 +373,17 @@ Normal nos primeiros 90 segundos, enquanto o modelo é carregado. Se continuar a
 
 ## 10. Remover a instalação
 
-Todo o ambiente fica dentro da pasta do projeto. Para desinstalar, apague o diretório `.venv`:
+Todo o ambiente fica dentro da pasta do projeto. Para desinstalar, apague o ambiente virtual e as dependências da interface:
 
 ```bash
-rm -rf .venv
+rm -rf .venv frontend/node_modules
 ```
 
 Nada é gravado fora da pasta do projeto, nem no registro do Windows.
 
-Se você usou Docker, remova também o container e a imagem:
+Se você usou Docker, remova também os containers e as imagens:
 
 ```bash
 docker compose down
-docker rmi detector-imagem-ia
+docker rmi detector-imagem-ia-api detector-imagem-ia-web
 ```

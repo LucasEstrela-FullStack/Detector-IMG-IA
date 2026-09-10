@@ -33,7 +33,7 @@ O percentual de confiança reflete a certeza do modelo dentro do domínio em que
 # ✨ Características
 
 * 🖼️ Detecção de imagens geradas por IA (DeepFake)
-* 📤 Envio de imagens por uma interface web simples
+* 📤 Interface web em React, com arrastar e soltar e tema claro/escuro
 * 🤖 Classificação baseada em Vision Transformer (ViT)
 * ⚡ Inferência rápida
 * 🌐 Aplicação web em Flask
@@ -82,9 +82,11 @@ O percentual de confiança reflete a certeza do modelo dentro do domínio em que
 
 ## Frontend
 
-* HTML5
-* CSS3
-* JavaScript
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* shadcn/ui
 
 ---
 
@@ -93,17 +95,16 @@ O percentual de confiança reflete a certeza do modelo dentro do domínio em que
 ```text
 Ai-ModelDeepFake/
 │
-├── app.py                 # API Flask e endpoint de inferência
+├── app.py                 # API Flask com o endpoint de previsão
 ├── model/                 # Pesos do modelo treinado
 ├── dataset/               # CIFAKE (train/test, FAKE/REAL)
 ├── notebook/              # Notebook de treino e avaliação
-├── templates/index.html   # Interface web
-├── static/                # Recursos estáticos
-├── requirements.txt       # Dependências de execução
+├── frontend/              # Interface web (React + TypeScript + Vite + shadcn/ui)
+├── requirements.txt       # Dependências de execução da API
 ├── requirements-dev.txt   # Dependências de treino, notebook e testes
 ├── tests/                 # Testes automatizados da API
-├── Dockerfile             # Imagem de execução
-├── docker-compose.yml     # Orquestração local
+├── Dockerfile             # Imagem da API
+├── docker-compose.yml     # Sobe a API e a interface juntas
 └── Procfile               # Configuração de deploy (gunicorn)
 ```
 
@@ -114,6 +115,7 @@ Ai-ModelDeepFake/
 ### Pré-requisitos
 
 * **Python 3.10 ou superior** (o projeto foi validado no 3.14)
+* **Node.js** em versão atual (validado no 26), para rodar a interface
 * Cerca de **3 GB livres em disco** — só o PyTorch ocupa mais de 2 GB
 * Os pesos do modelo em `model/ai_vs_real_image_detection/`, com o `model.safetensors` de 328 MB
 
@@ -169,11 +171,21 @@ O arquivo de desenvolvimento já inclui o de execução, então não é preciso 
 
 O download passa de 2 GB por causa do PyTorch, então a primeira instalação demora.
 
+### 5. Instale a interface
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
 ---
 
 # ▶️ Como rodar no PC
 
-Com o ambiente ativado, na raiz do projeto:
+São dois processos, cada um em seu terminal: a API e a interface.
+
+**Terminal 1 — API**, com o ambiente virtual ativado, na raiz do projeto:
 
 ```bash
 python app.py
@@ -186,14 +198,21 @@ INFO:root:Modelo e processador carregados com sucesso!
  * Running on http://127.0.0.1:5000
 ```
 
-Abra o navegador em **<http://localhost:5000>**, escolha uma imagem e clique em **Detectar se é IA ou Real**.
+**Terminal 2 — interface:**
+
+```bash
+cd frontend
+npm run dev
+```
+
+Abra o navegador em **<http://localhost:5173>**, arraste ou escolha uma imagem e clique em **Analisar imagem**. A interface encaminha a análise para a API na porta 5000.
 
 Pontos que costumam gerar dúvida:
 
-* A primeira inicialização leva de **20 a 30 segundos**, porque carrega os 328 MB do modelo na memória. As previsões seguintes são rápidas.
-* **Abra sempre pelo endereço `http://localhost:5000`.** Clicar duas vezes no arquivo `templates/index.html` mostra a mesma tela, mas o envio falha: sem o servidor, não há para onde mandar a imagem.
-* Para encerrar, pressione **Ctrl+C** no terminal onde o servidor está rodando.
-* Na inicialização aparece um aviso dizendo que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. **É apenas um aviso**, e a aplicação funciona normalmente — o `torchvision` faz parte das dependências de desenvolvimento.
+* A primeira inicialização da API leva de **20 a 30 segundos**, porque carrega os 328 MB do modelo na memória. As previsões seguintes são rápidas.
+* A interface recarrega sozinha quando você edita arquivos em `frontend/src`.
+* Para encerrar, pressione **Ctrl+C** em cada terminal.
+* Na inicialização da API aparece um aviso dizendo que o `torchvision` não está instalado e que será usado o processador de imagens do Pillow. **É apenas um aviso**, e a aplicação funciona normalmente — o `torchvision` faz parte das dependências de desenvolvimento.
 
 ### Sem ativar o ambiente
 
@@ -207,15 +226,15 @@ Se preferir não ativar o venv, chame o Python dele diretamente:
 
 # 🐳 Docker
 
-Se preferir não instalar Python nem criar ambiente virtual, o container traz tudo pronto:
+Se preferir não instalar Python nem Node, o Compose sobe a API e a interface prontas:
 
 ```bash
 docker compose up --build
 ```
 
-A aplicação fica em <http://localhost:5000>. Para encerrar, `docker compose down`.
+Acesse a interface em <http://localhost:5173>; a API fica em <http://localhost:5000>. Para encerrar, `docker compose down`.
 
-A imagem usa a build de CPU do PyTorch, roda como usuário sem privilégios e inclui o modelo. Detalhes e diagnóstico no [guia de instalação](GUIA-INSTALACAO.md).
+A interface só inicia depois que a API passa no healthcheck, ou seja, com o modelo já carregado. A imagem da API usa a build de CPU do PyTorch, roda como usuário sem privilégios e inclui o modelo. Detalhes e diagnóstico no [guia de instalação](GUIA-INSTALACAO.md).
 
 ---
 
@@ -228,9 +247,9 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-São 18 testes divididos em quatro grupos: entrega da interface, respostas de sucesso do `/predict` (formatos de arquivo, rótulos em português, faixa da confiança), tratamento de erros (sem arquivo, arquivo inválido, arquivo vazio, método incorreto) e qualidade do modelo dentro do domínio do CIFAKE.
+São 18 testes divididos em quatro grupos: status da API, respostas de sucesso do `/predict` (formatos de arquivo, rótulos em português, faixa da confiança), tratamento de erros (sem arquivo, arquivo inválido, arquivo vazio, método incorreto) e qualidade do modelo dentro do domínio do CIFAKE.
 
-Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados automaticamente em vez de falhar.
+Os testes de qualidade dependem do dataset em `dataset/test/`. Quando ele não está presente, são ignorados em vez de falhar.
 
 O modelo é carregado uma única vez por sessão, então a suíte leva cerca de 17 segundos.
 
@@ -241,7 +260,7 @@ O modelo é carregado uma única vez por sessão, então a suíte leva cerca de 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
 | `Address already in use` na porta 5000 | Já existe um servidor rodando | Feche o outro terminal, ou troque a porta em `app.py` |
-| A página abre, mas o envio dá erro | A interface foi aberta como arquivo local | Acesse por `http://localhost:5000` |
+| A interface abre, mas a análise falha | A API não está rodando | Suba a API com `python app.py` e aguarde o modelo carregar |
 | `RuntimeError: Falha ao carregar o modelo` | Pesos ausentes ou incompletos | Verifique se `model/ai_vs_real_image_detection/model.safetensors` existe e tem 328 MB |
 | `ModuleNotFoundError` | Ambiente virtual não ativado | Repita o passo 3 e confirme o `(.venv)` no terminal |
 | `python` não é reconhecido | Python fora do PATH | Reinstale marcando "Add Python to PATH", ou use `py` no lugar de `python` |

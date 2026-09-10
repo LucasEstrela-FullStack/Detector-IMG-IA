@@ -7,16 +7,12 @@ from conftest import imagem_em_bytes
 ROTULOS = {"Imagem Real", "Imagem Gerada por IA"}
 
 
-class TestPaginaInicial:
+class TestStatus:
     def test_responde_200(self, cliente):
-        r = cliente.get("/")
-        assert r.status_code == 200
+        assert cliente.get("/").status_code == 200
 
-    def test_entrega_a_interface(self, cliente):
-        r = cliente.get("/")
-        corpo = r.get_data(as_text=True)
-        assert "Detector de Imagem" in corpo
-        assert 'id="imageInput"' in corpo
+    def test_informa_status_e_endpoint(self, cliente):
+        assert cliente.get("/").get_json() == {"status": "ok", "endpoint": "POST /predict"}
 
 
 class TestPredictSucesso:

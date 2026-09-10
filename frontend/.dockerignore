@@ -1,0 +1,3 @@
+# Instaladas dentro da imagem pelo npm ci; as da máquina podem ser de outro sistema
+node_modules/
+dist/
