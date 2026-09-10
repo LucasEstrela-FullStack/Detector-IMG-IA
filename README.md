@@ -28,6 +28,8 @@ Na prática:
 
 O percentual de confiança reflete a certeza do modelo dentro do domínio em que foi treinado, e não garante que a resposta esteja correta fora dele.
 
+**O limite de 32×32 vem do treino, não do código.** O modelo pode ser retreinado com imagens maiores — veja [Retreinar para imagens maiores](#retreinar-para-imagens-maiores).
+
 ---
 
 # ✨ Características
@@ -303,7 +305,7 @@ Recebe uma imagem via `multipart/form-data` no campo `image`.
 
 # 🧪 Treino
 
-O notebook em `notebook/` documenta o ajuste fino do ViT sobre o CIFAKE.
+O notebook em `notebook/` documenta o ajuste fino do ViT sobre o CIFAKE. **O modelo atual foi treinado com imagens de 32×32 pixels**, e por isso o `app.py` reduz toda imagem enviada a esse tamanho antes da previsão.
 
 Requer as dependências de desenvolvimento (`pip install -r requirements-dev.txt`). Os caminhos internos são relativos à pasta `notebook/`, então **abra o Jupyter a partir dela**:
 
@@ -314,16 +316,26 @@ jupyter notebook
 
 O treino exige o dataset em `dataset/`, com a estrutura `train/FAKE`, `train/REAL`, `test/FAKE` e `test/REAL`. Sem GPU, o processo leva várias horas.
 
-Dois pontos antes de reproduzir ou citar os resultados:
+Antes de citar os resultados atuais: o notebook junta as pastas `train` e `test` do CIFAKE e refaz um split aleatório 60/40, descartando a divisão canônica. Como o modelo base já havia sido treinado no CIFAKE, a acurácia registrada (98,24%) provavelmente está superestimada. Para uma medição confiável, avalie contra `dataset/test/` sem reaproveitá-lo no treino.
 
-1. O notebook foi escrito para a linha 4.x do `transformers`. As chamadas `TrainingArguments(evaluation_strategy=...)` e `Trainer(tokenizer=...)` foram renomeadas ou removidas na 5.x e precisam de ajuste.
-2. O notebook junta as pastas `train` e `test` do CIFAKE e refaz um split aleatório 60/40, descartando a divisão canônica. Como o modelo base já havia sido treinado no CIFAKE, a acurácia registrada (98,24%) provavelmente está superestimada. Para uma medição confiável, avalie contra `dataset/test/` sem reaproveitá-lo no treino.
+## Retreinar para imagens maiores
+
+O limite de 32×32 vem do dataset, não da arquitetura. O Vision Transformer trabalha nativamente com **224×224**: hoje a imagem é reduzida a 32×32 e depois ampliada de volta para 224×224 pelo processador, só para imitar as miniaturas do CIFAKE. Com um dataset de alta resolução, o modelo passa a aproveitar os 224×224 de verdade.
+
+1. **Monte o dataset** em `dataset/`, com a mesma estrutura: `train/REAL`, `train/FAKE`, `test/REAL` e `test/FAKE`. Os nomes das pastas precisam ser exatamente `REAL` e `FAKE`, porque é deles que o notebook tira os rótulos. Para cobrir o uso real, inclua fotografias em alta resolução, rostos e imagens de geradores atuais, mantendo as duas classes balanceadas.
+2. **Parta do ViT genérico.** Na célula 12 do notebook, troque o `model_str` para `google/vit-base-patch16-224-in21k`. O checkpoint atual foi ajustado para miniaturas ampliadas e levaria esse viés para o novo treino.
+3. **Use a divisão real de teste.** Em vez do split aleatório 60/40, treine com `dataset/train` e avalie com `dataset/test`, para que a acurácia medida seja confiável.
+4. **Treine com GPU.** Em CPU, um dataset grande em alta resolução leva dias.
+5. **Salve o novo modelo** em `model/ai_vs_real_image_detection/`, ou em outra pasta ajustando o `model_dir` no `app.py`.
+6. **Remova a redução para 32×32** no `app.py`, a linha `image = image.resize((32, 32))`. O `ViTImageProcessor` já redimensiona para 224×224 sozinho.
+
+> **Não faça o passo 6 com o modelo atual.** Sem retreinar, remover a redução piora os resultados, porque afasta a entrada do domínio em que o modelo aprendeu.
 
 ---
 
 # 🔮 Melhorias futuras
 
-* Retreino com dataset de alta resolução, ampliando o uso para além do CIFAKE
+* Retreino com dataset de alta resolução, ampliando o uso para além do CIFAKE ([como fazer](#retreinar-para-imagens-maiores))
 * Validação de tipo e tamanho de arquivo no upload (`MAX_CONTENT_LENGTH`)
 * Visualizações de IA explicável (Grad-CAM ou mapas de atenção)
 * Suporte a múltiplos modelos de geração de imagem
